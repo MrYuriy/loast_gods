@@ -59,7 +59,16 @@ def core(request):
     row = 1
     for top in topy:
         #top = 45887233
-        adreses = unical_adres(transaction[top],transaction_archiw[top])
+        # провірка на існування списку з адресами 
+        if top in transaction and top in transaction_archiw:
+            #print ('ok',transaction_archiw[top])
+            adreses = unical_adres(transaction[top],transaction_archiw[top])
+        elif top not in transaction and top in transaction_archiw:
+            adreses = transaction_archiw[top]
+        elif top in transaction and top not in transaction_archiw:
+            adreses = transaction[top]
+        else :
+            adreses = []
         if inventory.get(top)!=None:
            aq = adresqty(adreses,inventory[top])
         else:
@@ -126,11 +135,14 @@ def get_inventory(inventory_sh):
     inventory_dict_clin = {}
     for s_row, l_row, q_row in zip(sku_row,location_row,quty_row):
         if s_row.value not in inventory_dict_diorty:
-            inventory_dict_diorty[s_row.value]=[[l_row.value,q_row.value]]
+            if s_row.value != None:
+                inventory_dict_diorty[s_row.value]=[[l_row.value,q_row.value]]
         else:
-            inventory_dict_diorty[s_row.value].append([l_row.value,q_row.value])
+            if s_row.value != None:
+                inventory_dict_diorty[s_row.value].append([l_row.value,q_row.value])
     # slq - sku + location + quanuty 
     # сумую співпвдіння по адресах ,1 адркс = загальна к-ть
+    #print(inventory_dict_diorty)
     for slq in inventory_dict_diorty:
         betwin_dickt = {}
         for adres_qty in inventory_dict_diorty[slq]:
@@ -138,6 +150,9 @@ def get_inventory(inventory_sh):
             if adres_qty[0] not in betwin_dickt:
                 betwin_dickt[adres_qty[0]]=adres_qty[1]
             else:
+                # print('!!!!!!!!!!',adres_qty[0])
+                # print("@@@@@@@@@@-",adres_qty[1])
+                # print(adres_qty)
                 betwin_dickt[adres_qty[0]]+=adres_qty[1]
         clean_list = []
         for adres in betwin_dickt:
