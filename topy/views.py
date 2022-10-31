@@ -103,10 +103,12 @@ def core(request):
         #topys[f'B{row}'].alignment = Alignment(wrapText=True)
         topys[f'c{row}']=adrqtytowrite
         row+=1
-    resoltb.save('topy.xlsx')
+    resoltb.save('./topy.xlsx')
+    resoltb.close
     #print ("get resolt",(time.time()-get_resolt))
     #print("all time",(time.time()-start_read))
     #print(type(resoltb))
+    wb.close()
     return (resoltb)    
 
 
