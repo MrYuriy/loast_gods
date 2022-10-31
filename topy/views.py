@@ -17,7 +17,7 @@ def index(request):
         return render(request, 'topy/index.html',{})
     else : 
         #start_work = time.time()
-        topy = core(request)
+        #topy = core(request)
         file_path = "./topy.xlsx"
         response = HttpResponse(open(file_path, 'rb').read())
         #print(response)
@@ -30,7 +30,7 @@ def core(request):
     excel_file = request.FILES["excel_file"]
     wb = openpyxl.load_workbook(excel_file, read_only=True)
     
-    read_verible = time.time()
+    #read_verible = time.time()
     transaction_sh = wb["transaction"]
     transactionarchiw_sh = wb["archiw"]
     inventory_sh = wb["inventory"]
