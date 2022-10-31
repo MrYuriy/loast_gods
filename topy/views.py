@@ -9,48 +9,59 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment
 from django.http import JsonResponse, request, FileResponse
 import os
-
+import time
 
 
 def index(request):
     if "GET" == request.method:
         return render(request, 'topy/index.html',{})
-    else :
+    else : 
+        #start_work = time.time()
         topy = core(request)
         file_path = "./topy.xlsx"
         response = HttpResponse(open(file_path, 'rb').read())
-        print(response)
+        #print(response)
         response['Content-Type'] = 'mimetype/submimetype'
         response['Content-Disposition'] = 'attachment; filename=topy.xlsx'
+        #print('all time',time.time()-start_work)
         return response
 def core(request):
+    
     excel_file = request.FILES["excel_file"]
-    wb = openpyxl.load_workbook(excel_file)
+    wb = openpyxl.load_workbook(excel_file, read_only=True)
     
-    
-    
+    read_verible = time.time()
     transaction_sh = wb["transaction"]
     transactionarchiw_sh = wb["archiw"]
     inventory_sh = wb["inventory"]
     ean_sh = wb["sku"]
     topy_sh = wb["topy"]
+    #print ("read verible",(time.time()-read_verible))
     
-
+    #analise_verible = time.time()
     topy = get_sku_topy(topy_sh)
+
+    # transaction_time = time.time()
     transaction_archiw = read_transaction(transactionarchiw_sh)
     transaction = read_transaction(transaction_sh)
+    #print("transacktion time ", (time.time()-transaction_time))
+
     inventory = get_inventory(inventory_sh)
     ean = get_ean(ean_sh)
     name = get_names(topy_sh)
+    #print ("analise verible",(time.time()-analise_verible))
+
     #print(name)
     #print(topy[0])
     #print(transaction[topy[1]],transaction_archiw[topy[1]],inventory[topy[1]],ean[topy[1]])
     #print(transaction[topy[1]],transaction_archiw[topy[1]])
     #topys = resoltb.active
+
+    get_resolt = time.time()
     path = './topy.xlsx'
     try:
         os.remove(path)
-        print("Deleted")
+        #print("Deleted")
     except:
         None
 
@@ -93,47 +104,86 @@ def core(request):
         topys[f'c{row}']=adrqtytowrite
         row+=1
     resoltb.save('topy.xlsx')
-    print(type(resoltb))
+    #print ("get resolt",(time.time()-get_resolt))
+    #print("all time",(time.time()-start_read))
+    #print(type(resoltb))
     return (resoltb)    
 
 
 
 def read_transaction(transaction_sh):
-    sku_row = transaction_sh['B']
-    from_location_row = transaction_sh['C']
-    to_location_row = transaction_sh['D']
+   
+    maxindex = 'D'+str(transaction_sh.max_row)
+    table = transaction_sh['B1':maxindex]
     transaction_dict = {}
-    for s,fromloc,toloc in zip(sku_row,from_location_row,to_location_row):
-        #print (s.value,'-',fromloc.value,'-',toloc.value)
-
-        if s.value not in transaction_dict  :
+    for s,fromloc,toloc in table:
+        # if s.value not in transaction_dict  :
+        #     transaction_dict[s.value] = []
+        #     if filter(fromloc.value):
+        #         transaction_dict[s.value].append(fromloc.value)
+        #     if filter(toloc.value):
+        #         transaction_dict[s.value].append(toloc.value)
+        # else :
+        #     if  fromloc.value not in transaction_dict[s.value] and filter(fromloc.value):
+        #         transaction_dict[s.value].append(fromloc.value)
+        #     if  toloc.value not in transaction_dict[s.value] and filter(toloc.value):
+        #         transaction_dict[s.value].append(toloc.value)
+        
+        if s.value not in transaction_dict:
             transaction_dict[s.value] = []
-            if filter(fromloc.value):
-                transaction_dict[s.value].append(fromloc.value)
-            if filter(toloc.value):
-                transaction_dict[s.value].append(toloc.value)
-        else :
-            if  fromloc.value not in transaction_dict[s.value] and filter(fromloc.value):
-                transaction_dict[s.value].append(fromloc.value)
-            if  toloc.value not in transaction_dict[s.value] and filter(toloc.value):
-                transaction_dict[s.value].append(toloc.value)
+            transaction_dict[s.value].append(str(fromloc.value))
+            transaction_dict[s.value].append(str(toloc.value))
+        else:
+            transaction_dict[s.value].append(str(fromloc.value))
+            transaction_dict[s.value].append(str(toloc.value))
+
+    for sku in transaction_dict:
+        betwin_list=[]
+        for adres in list(set(transaction_dict[sku])):
+            if filter(adres):
+                betwin_list.append(adres)
+        transaction_dict[sku]=betwin_list
+
     return (transaction_dict)
+
 def get_sku_topy(topy_sh):
-    sku_row = topy_sh['A']
+    #sku_row = topy_sh['A']
     sku_list=[]
-    for sku in sku_row:
-        sku_list.append(sku.value) if type(sku.value)==int and sku.value not in sku_list else None
+    for sku in range(1,topy_sh.max_row+1):
+        #print(topy_sh[sku][0].value)
+        row_value = topy_sh[sku][0].value
+        #sku_list.append(sku.value) if type(sku.value)==int and sku.value not in sku_list else None
+        sku_list.append(row_value) if type(row_value)==int and row_value not in sku_list else None
     
     return sku_list
 
 def get_inventory(inventory_sh):
-    sku_row = inventory_sh["F"]
-    location_row = inventory_sh["G"]
-    quty_row = inventory_sh["H"]
+    # sku_row = inventory_sh["F"]
+    # location_row = inventory_sh["G"]
+    # quty_row = inventory_sh["H"]
+    #print("inventoru###########")
+    # sku_row = []
+    # location_row = []
+    # quty_row = []
+
+    # for row in range(1, inventory_sh.max_row+1):
+    #     sku = inventory_sh[row][5]
+    #     location = inventory_sh[row][6]
+    #     quty = inventory_sh[row][7]
+
+    #     sku_row.append(sku)
+    #     location_row.append(location)
+    #     quty_row.append(quty)
+        #print(sku.value,'-',location.value,'-',quty.value)
+
+    maxindex = 'H'+str(inventory_sh.max_row)
+    table = inventory_sh['F1':maxindex]
+
     # створюю не фільтрований  словник inventory_dict = {sku:[[adres,quty],[adres1,quty]]...sku_n:[[adres_n,quty],[adres_n+1,quty]]}
     inventory_dict_diorty = {}
     inventory_dict_clin = {}
-    for s_row, l_row, q_row in zip(sku_row,location_row,quty_row):
+    for s_row, l_row, q_row in table:
+    #for s_row, l_row, q_row in zip(sku_row,location_row,quty_row):
         if s_row.value not in inventory_dict_diorty:
             if s_row.value != None:
                 inventory_dict_diorty[s_row.value]=[[l_row.value,q_row.value]]
@@ -164,8 +214,18 @@ def get_inventory(inventory_sh):
     return (inventory_dict_clin)
    
 def get_ean(ean_sh):
-    sku_row = ean_sh["A"]
-    ean_row = ean_sh["D"]
+    # sku_row = ean_sh["A"]
+    # ean_row = ean_sh["D"]
+
+    sku_row = []
+    ean_row = []
+
+    for row in range(1,ean_sh.max_row+1):
+       sku = ean_sh[row][0]
+       ean = ean_sh[row][4]
+       sku_row.append(sku)
+       ean_row.append(ean)
+
     ean_list = []
     suplier_dict = {}
     for s_row, e_row in zip(sku_row,ean_row):
@@ -198,11 +258,27 @@ def adresqty(adreses, inventory):
     return (final_list)
 
 def get_names(topy_sh):
-    name_row = topy_sh['B']
-    sku_row = topy_sh['A']
+    # name_row = topy_sh['B']
+    # sku_row = topy_sh['A']
+
+    # name_row = []
+    # sku_row = []
+
+    # for row in range(1,topy_sh.max_row+1):
+    #     name = topy_sh[row][1]
+    #     sku = topy_sh[row][0]
+
+    #     name_row.append(name)
+    #     sku_row.append(sku)
+
+
     name_dict = {}
-    
-    for sku, name in zip(sku_row,name_row):
+
+    maxindex = 'B'+str(topy_sh.max_row)
+    table = topy_sh['A1':maxindex]
+
+    for sku, name in table:
+    #or sku, name in zip(sku_row,name_row):
         if type(sku.value)==int:
             name_dict[sku.value]=name.value
             #print(name.value)
