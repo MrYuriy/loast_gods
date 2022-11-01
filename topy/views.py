@@ -4,8 +4,11 @@ from django.http import HttpResponse
 from unicodedata import name
 from urllib import response
 from django.shortcuts import render
+
 import openpyxl
 from openpyxl import Workbook
+from tempfile import NamedTemporaryFile
+
 from openpyxl.styles import Alignment
 from django.http import JsonResponse, request, FileResponse
 import os
@@ -17,7 +20,7 @@ def index(request):
         return render(request, 'topy/index.html',{})
     else : 
         #start_work = time.time()
-        #topy = core(request)
+        topy = core(request)
         file_path = "./topy.xlsx"
         response = HttpResponse(open(file_path, 'rb').read())
         #print(response)
@@ -30,38 +33,24 @@ def core(request):
     excel_file = request.FILES["excel_file"]
     wb = openpyxl.load_workbook(excel_file, read_only=True)
     
-    #read_verible = time.time()
     transaction_sh = wb["transaction"]
     transactionarchiw_sh = wb["archiw"]
     inventory_sh = wb["inventory"]
     ean_sh = wb["sku"]
     topy_sh = wb["topy"]
-    #print ("read verible",(time.time()-read_verible))
-    
-    #analise_verible = time.time()
     topy = get_sku_topy(topy_sh)
 
-    # transaction_time = time.time()
     transaction_archiw = read_transaction(transactionarchiw_sh)
     transaction = read_transaction(transaction_sh)
-    #print("transacktion time ", (time.time()-transaction_time))
 
     inventory = get_inventory(inventory_sh)
     ean = get_ean(ean_sh)
     name = get_names(topy_sh)
-    #print ("analise verible",(time.time()-analise_verible))
-
-    #print(name)
-    #print(topy[0])
-    #print(transaction[topy[1]],transaction_archiw[topy[1]],inventory[topy[1]],ean[topy[1]])
-    #print(transaction[topy[1]],transaction_archiw[topy[1]])
-    #topys = resoltb.active
-
-    get_resolt = time.time()
+  
+    
     path = './topy.xlsx'
     try:
         os.remove(path)
-        #print("Deleted")
     except:
         None
 
@@ -69,7 +58,6 @@ def core(request):
     topys = resoltb.create_sheet("Topy",0)
     row = 1
     for top in topy:
-        #top = 45887233
         # провірка на існування списку з адресами 
         if top in transaction and top in transaction_archiw:
             #print ('ok',transaction_archiw[top])
@@ -89,26 +77,20 @@ def core(request):
         name_ean = ""+name[top]+'\n'
         for a in aq:
             adrqtytowrite+=(a+'\n')
-        #print(top,aq,ean[top])
-        #print('\n')
         # додавання до адресів ean
         for e in ean[top]:
             name_ean+=(str(e)+'\n')
-        #print(name_ean)
-        #topys.cell('A1').style.alignment.wrap_text = True
         topys[f'C{row}'].alignment = Alignment(wrapText=True)
         topys[f'B{row}'].alignment = Alignment(wrapText=True)
         topys[f'A{row}']=top
         topys[f'B{row}']=name_ean
-        #topys[f'B{row}'].alignment = Alignment(wrapText=True)
-        topys[f'c{row}']=adrqtytowrite
+        topys[f'C{row}']=adrqtytowrite
         row+=1
-    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    #resoltb.save('./topy.xlsx')
-    resoltb.close
-    #print ("get resolt",(time.time()-get_resolt))
-    #print("all time",(time.time()-start_read))
-    #print(type(resoltb))
+
+    with NamedTemporaryFile() as tmp:
+        resoltb.template = True
+        resoltb.save('./topy.xlsx')
+    resoltb.close()
     wb.close()
     return (resoltb)    
 
