@@ -88,11 +88,12 @@ def core(request):
         topys[f'C{row}']=adrqtytowrite
         row+=1
 
-    with NamedTemporaryFile() as tmp:
-        resoltb.template = True
-        resoltb.save('./topy.xlsx')
-    resoltb.close()
-    wb.close()
+    # with NamedTemporaryFile() as tmp:
+    #     resoltb.template = True
+    #     resoltb.save('topy.xlsx')
+    # resoltb.close()
+    # wb.close()
+    resoltb.save('topy.xlsx')
     return (resoltb)    
 
 
