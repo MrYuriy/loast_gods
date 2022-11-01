@@ -13,8 +13,9 @@ from openpyxl.styles import Alignment
 from django.http import JsonResponse, request, FileResponse
 import os
 import time
+from django.views.decorators.csrf import csrf_exempt
 
-
+@csrf_exempt
 def index(request):
     if "GET" == request.method:
         return render(request, 'topy/index.html',{})
